@@ -186,11 +186,11 @@
       "hideWarningsAndErrors": true
     },
     "restore": {
-      "projectUniqueName": "c:\\users\\matheus\\Source\\repos\\Query\\Query\\Query.csproj",
+      "projectUniqueName": "C:\\Users\\Matheus\\Source\\repos\\Query\\Query\\Query.csproj",
       "projectName": "Query",
-      "projectPath": "c:\\users\\matheus\\Source\\repos\\Query\\Query\\Query.csproj",
+      "projectPath": "C:\\Users\\Matheus\\Source\\repos\\Query\\Query\\Query.csproj",
       "packagesPath": "C:\\Users\\Matheus\\.nuget\\packages\\",
-      "outputPath": "c:\\users\\matheus\\Source\\repos\\Query\\Query\\obj\\",
+      "outputPath": "C:\\Users\\Matheus\\Source\\repos\\Query\\Query\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
