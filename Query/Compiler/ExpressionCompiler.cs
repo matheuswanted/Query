@@ -34,6 +34,12 @@ namespace Query.Compiler
             if (exp == null)
                 throw new MalformedExpressionException();
         }
+
+        private string GetColumnName(MemberExpression e)
+            => e.Member.GetAttribute<TableColumnAttribute>().ColumnName;
+
+        private string GetTableName(MemberExpression e)
+            => e.Member.DeclaringType.GetAttribute<TableNameAttribute>().TableName;
         public string Compile(QueryExpression query)
         {
             Compile(query.QueryRoot);
@@ -61,17 +67,21 @@ namespace Query.Compiler
             for (int i = 0; i < count; i++)
             {
                 if (i > 0)
-                    _builder.Append(", ");
-                switch (query.Arguments[0])
+                    _builder.Append(",");
+                switch (query.Arguments[i])
                 {
                     case MemberExpression e:
-                        _builder.AppendFormat(" {0}.{1} AS {2}", e.Member.DeclaringType.GetAttribute<TableNameAttribute>().TableName, e.Member.GetAttribute<TableColumnAttribute>().ColumnName, query.Members[0].Name);
+                        _builder.AppendFormat(" {0}.{1} AS \"{2}\"", GetTableName(e), GetColumnName(e), query.Members[i].Name);
+                        break;
+                    case ConstantExpression e:
+                        _builder.AppendFormat(" {0} AS \"{1}\"", e.Value, query.Members[i].Name);
                         break;
                 }
 
             }
             _builder.Append(" ");
         }
+
         public void CompileProjection(MemberInitExpression query) { }
         public void Compile(FromExpression query)
         {
@@ -88,7 +98,7 @@ namespace Query.Compiler
         public void CompileEquality(BinaryExpression query) { }
         public void CompilePredicate(BinaryExpression query) { }
         public string Compiled()
-        { 
+        {
             var result = _builder.ToString();
             _builder.Clear();
             return result;

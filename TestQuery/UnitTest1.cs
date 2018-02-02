@@ -9,7 +9,7 @@ namespace TestQuery
     {
         const string selectAllFromExams = @"SELECT * FROM EXAMES";
         const string selectIdsFromExams = @"SELECT EXAMES.EXAMES_ID FROM EXAMES";
-        const string selectIdsFromExamsWhereCrazyWhere = "SELECT * FROM EXAMES WHERE (EXAMES.EXAMES_ID = 10) AND (((EXAMES.EXAMES_ID = 5) AND (EXAMES.DESCRIPTION = \"x\")) AND (EXAMES.EXAMES_ID = 10))";
+        const string selectIdsFromExamsWhereCrazyWhere = "SELECT * FROM EXAMES WHERE (EXAMES.EXAMES_ID = 10) OR (((EXAMES.EXAMES_ID = 5) AND (EXAMES.DESCRIPTION = \"x\")) AND (EXAMES.EXAMES_ID = 10))";
         [TestMethod]
         public void QueryProviderOfExameMetadata_ShouldReturnASelectForExamesTable()
         {

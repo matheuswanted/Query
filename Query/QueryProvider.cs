@@ -31,6 +31,7 @@ namespace Query
         private string _tableName;
         private StringBuilder _builder;
         private const string AND = " AND ";
+        private const string OR = " OR ";
         private const string WHERE = " WHERE ";
         private const string SELECT = "SELECT";
         private const string ALL = " *";
@@ -85,6 +86,8 @@ namespace Query
             switch (exp.NodeType)
             {
                 case ExpressionType.OrElse:
+                    ResolvePredicate(exp, OR);
+                    break;
                 case ExpressionType.AndAlso:
                     ResolvePredicate(exp, AND);
                     break;

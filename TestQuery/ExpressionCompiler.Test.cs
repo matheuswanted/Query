@@ -27,6 +27,13 @@ namespace TestQuery
             select.Project(all);
             return select;
         }
+
+        private SelectExpression ToSelectExpression(Expression<Func<ExameMetadata, dynamic>> f)
+        {
+            var s = new SelectExpression();
+            s.Project((f as LambdaExpression).Body);
+            return s;
+        }
         public void AssertMalformedExpressionException(Action method)
         {
             try
@@ -57,7 +64,7 @@ namespace TestQuery
             Assert.AreEqual("SELECT * ", _compiler.Compiled());
         }
         [TestMethod]
-        public void Compile_ShouldReturnColumnsMetadata_WhenCompilingANewExpressionWithMetadata()
+        public void Compile_ShouldReturnIdColumnMetadata_WhenCompilingANewExpressionWithMetadata()
         {
 
             Expression<Func<ExameMetadata, dynamic>> f = e => new
@@ -66,20 +73,38 @@ namespace TestQuery
             };
             var select = ToSelectExpression(f);
             _compiler.CompileProjection((f as LambdaExpression).Body as NewExpression);
-            Assert.AreEqual(" EXAMES.EXAMES_ID AS Id ", _compiler.Compiled());
+            Assert.AreEqual(" EXAMES.EXAMES_ID AS \"Id\" ", _compiler.Compiled());
+        }
+        [TestMethod]
+        public void Compile_ShouldReturnIdAndDescriptionColumnsAsNamedColumns()
+        {
+
+            Expression<Func<ExameMetadata, dynamic>> f = e => new
+            {
+                Id = e.Id,
+                Desc = e.Description
+            };
+            var select = ToSelectExpression(f);
+            _compiler.CompileProjection((f as LambdaExpression).Body as NewExpression);
+            Assert.AreEqual(" EXAMES.EXAMES_ID AS \"Id\", EXAMES.DESCRIPTION AS \"Desc\" ", _compiler.Compiled());
+        }
+        [TestMethod]
+        public void Compile_ShouldReturnConstantAsAge()
+        {
+
+            Expression<Func<ExameMetadata, dynamic>> f = e => new
+            {
+                Age = 10
+            };
+            var select = ToSelectExpression(f);
+            _compiler.CompileProjection((f as LambdaExpression).Body as NewExpression);
+            Assert.AreEqual(" 10 AS \"Age\" ", _compiler.Compiled());
         }
         [TestMethod]
         public void TestThousandExecutionOf_Compile_ShouldReturnColumnsMetadata_WhenCompilingANewExpressionWithMetadata()
         {
             for (int i = 0; i < 1000; i++)
-                Compile_ShouldReturnColumnsMetadata_WhenCompilingANewExpressionWithMetadata();
-        }
-
-        private SelectExpression ToSelectExpression(Expression<Func<ExameMetadata, dynamic>> f)
-        {
-            var s = new SelectExpression();
-            s.Project((f as LambdaExpression).Body);
-            return s;
+                Compile_ShouldReturnIdColumnMetadata_WhenCompilingANewExpressionWithMetadata();
         }
     }
 }
