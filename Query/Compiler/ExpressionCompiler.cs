@@ -37,9 +37,10 @@ namespace Query.Compiler
 
         private string GetColumnName(MemberExpression e)
             => e.Member.GetAttribute<TableColumnAttribute>().ColumnName;
-
         private string GetTableName(MemberExpression e)
             => e.Member.DeclaringType.GetAttribute<TableNameAttribute>().TableName;
+        private string GetTableName(Type type)
+            => type.GetAttribute<TableNameAttribute>().TableName;
         public string Compile(QueryExpression query)
         {
             Compile(query.QueryRoot);
@@ -68,18 +69,30 @@ namespace Query.Compiler
             {
                 if (i > 0)
                     _builder.Append(",");
-                switch (query.Arguments[i])
-                {
-                    case MemberExpression e:
-                        _builder.AppendFormat(" {0}.{1} AS \"{2}\"", GetTableName(e), GetColumnName(e), query.Members[i].Name);
-                        break;
-                    case ConstantExpression e:
-                        _builder.AppendFormat(" {0} AS \"{1}\"", e.Value, query.Members[i].Name);
-                        break;
-                }
-
+                CompileMember(query.Arguments[i], query.Members[i]);
             }
             _builder.Append(" ");
+        }
+        public void CompileMember(Expression exp, MemberInfo alias = null)
+        {
+            switch (exp)
+            {
+                case MemberExpression e:
+                    if (alias != null)
+                        _builder.AppendFormat(" {0}.{1} AS \"{2}\"", GetTableName(e), GetColumnName(e), alias.Name);
+                    else
+                        _builder.AppendFormat("{0}.{1}", GetTableName(e), GetColumnName(e));
+                    break;
+                case ConstantExpression e:
+                    if (alias != null)
+                        _builder.AppendFormat(" {0} AS \"{1}\"", e.Value, alias.Name);
+                    else if (e.Type == typeof(string))
+                        _builder.AppendFormat("'{0}'", e.Value);
+                    else
+                        _builder.Append(e.Value);
+                    break;
+                default: throw new NotSupportedException($"Expression type {exp.GetType().Name} is not supported!");
+            }
         }
 
         public void CompileProjection(MemberInitExpression query) { }
@@ -87,16 +100,68 @@ namespace Query.Compiler
         {
             CheckMalformed(query);
             Compile(query.Select);
+            CompileFrom(query);
             Compile(query.Joins);
             Compile(query.Where);
         }
-        public void Compile(WhereExpression query) { }
+        public void CompileFrom(FromExpression from)
+            => _builder.Append(FromExpression.FROM).AppendFormat(" {0} ", GetTableName(from.Table));
+
+
+        public void Compile(WhereExpression query)
+        {
+            if (query != null)
+            {
+                _builder.Append(WhereExpression.WHERE).Append(" ");
+                CompileFilter(query.Filter as BinaryExpression);
+            }
+        }
 
         public void Compile(IEnumerable<JoinExpression> query) { }
         public void Compile(JoinExpression query) { }
-        public void CompileFilter(BinaryExpression query) { }
-        public void CompileEquality(BinaryExpression query) { }
-        public void CompilePredicate(BinaryExpression query) { }
+        public void CompileFilter(BinaryExpression exp)
+        {
+            _builder.Append("(");
+            switch (exp.NodeType)
+            {
+                case ExpressionType.OrElse:
+                case ExpressionType.AndAlso:
+                    CompilePredicate(exp);
+                    break;
+                default:
+                    CompileEquality(exp);
+                    break;
+            }
+            _builder.Append(")");
+        }
+        public void CompileEquality(BinaryExpression query)
+        {
+            CompileMember(query.Left);
+            _builder.Append(GetOperator(query.NodeType));
+            CompileMember(query.Right);
+        }
+        public void CompilePredicate(BinaryExpression query)
+        {
+            CompileFilter(query.Left as BinaryExpression);
+            _builder.Append(GetOperator(query.NodeType));
+            CompileFilter(query.Right as BinaryExpression);
+        }
+        private string GetOperator(ExpressionType nodeType)
+        {
+            switch (nodeType)
+            {
+                case ExpressionType.AndAlso: return " AND ";
+                case ExpressionType.OrElse: return " OR ";
+                case ExpressionType.Equal: return " = ";
+                case ExpressionType.NotEqual: return " <> ";
+                case ExpressionType.GreaterThan: return " > ";
+                case ExpressionType.LessThan: return " < ";
+                case ExpressionType.GreaterThanOrEqual: return " >= ";
+                case ExpressionType.LessThanOrEqual: return " <= ";
+                default: throw new NotImplementedException("Operator is not implemented.");
+            }
+        }
+
         public string Compiled()
         {
             var result = _builder.ToString();

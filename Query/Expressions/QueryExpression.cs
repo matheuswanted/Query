@@ -21,6 +21,13 @@ namespace Query.Expressions
     }
     public class FromExpression : Expression
     {
+        internal const string FROM = "FROM";
+
+        public FromExpression(Type t)
+        {
+            Table = t;
+        }
+        public Type Table { get; internal set; }
         public SelectExpression Select { get; internal set; }
         public IEnumerable<JoinExpression> Joins { get; internal set; }
         public WhereExpression Where { get; internal set; }
@@ -39,6 +46,10 @@ namespace Query.Expressions
     }
     public class WhereExpression : Expression
     {
+        internal const string WHERE = "WHERE";
+
+        public WhereExpression(Expression filter)
+            => Filter = filter;
         public Expression Filter { get; internal set; }
     }
     public class SubQueryExpression : Expression

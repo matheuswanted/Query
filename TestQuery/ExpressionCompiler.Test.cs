@@ -54,7 +54,7 @@ namespace TestQuery
         [TestMethod]
         public void Compile_ShouldThrowException_WhenFromExpressionSelectIsNull()
         {
-            AssertMalformedExpressionException(() => _compiler.Compile(new FromExpression()));
+            AssertMalformedExpressionException(() => _compiler.Compile(new FromExpression(typeof(ExameMetadata))));
         }
         [TestMethod]
         public void Compile_ShouldReturnSelectAllSql_WhenCompilingASelectAllExpression()
@@ -99,6 +99,28 @@ namespace TestQuery
             var select = ToSelectExpression(f);
             _compiler.CompileProjection((f as LambdaExpression).Body as NewExpression);
             Assert.AreEqual(" 10 AS \"Age\" ", _compiler.Compiled());
+        }
+        [TestMethod]
+        public void Compile_ShouldReturnFromExames()
+        {
+            var from = new FromExpression(typeof(ExameMetadata));
+            _compiler.CompileFrom(from);
+            Assert.AreEqual("FROM EXAMES ", _compiler.Compiled());
+        }
+        [TestMethod]
+        public void Compile_ShouldReturnWhereIdEquals10()
+        {
+            Expression<Func<ExameMetadata, bool>> f = e => e.Id == 10;
+            var where = new WhereExpression(f.Body);
+            _compiler.Compile(where);
+            Assert.AreEqual("WHERE (EXAMES.EXAMES_ID = 10)", _compiler.Compiled());
+        }
+        [TestMethod]
+        public void Compile_ShouldReturnIdEquals10OrDescriptionDifferentTomAndIdGraterThan50()
+        {
+            Expression<Func<ExameMetadata, bool>> f = e => e.Id == 10 || (e.Description != "Tom" && e.Id > 50);
+            _compiler.CompileFilter(f.Body as BinaryExpression);
+            Assert.AreEqual("((EXAMES.EXAMES_ID = 10) OR ((EXAMES.DESCRIPTION <> 'Tom') AND (EXAMES.EXAMES_ID > 50)))", _compiler.Compiled());
         }
         [TestMethod]
         public void TestThousandExecutionOf_Compile_ShouldReturnColumnsMetadata_WhenCompilingANewExpressionWithMetadata()
